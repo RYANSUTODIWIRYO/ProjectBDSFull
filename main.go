@@ -6,6 +6,7 @@ import (
     "net/http"
 
     ent "bds/entities"
+    cont "bds/controllers"
 
     "github.com/labstack/echo"
 )
@@ -41,21 +42,15 @@ func (t *Renderer) Render(
     if t.debug {
         t.ReloadTemplates()
     }
-
     return t.template.ExecuteTemplate(w, name, data)
 }
 
 func main() {
     e := echo.New()
 
-    e.Renderer = NewRenderer("D:/Bootcamp Golang/Project BDS Front-Backend/bds/views/*.html", true)
+    e.Renderer = NewRenderer("./views/*.html", true)
 
-    e.GET("/index", func(c echo.Context) error {
-        data := ent.Pesan{
-            Nama : "Ryan",
-        }
-        return c.Render(http.StatusOK, "index.html", data)
-    })
+    e.GET("/index", cont.Index)
 
     e.Any("/login", func(c echo.Context) error {
         data := ent.Pesan{
