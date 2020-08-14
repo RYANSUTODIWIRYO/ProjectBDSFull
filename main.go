@@ -5,7 +5,7 @@ import (
     "io"
     "net/http"
 
-    ent "bds/entities"
+    // ent "bds/entities"
     cont "bds/controllers"
 
     "github.com/labstack/echo"
@@ -50,14 +50,15 @@ func main() {
 
     e.Renderer = NewRenderer("./views/*.html", true)
 
-    e.GET("/index", cont.Index)
+    e.Any("/", func(c echo.Context) error {
+		return c.Redirect(http.StatusTemporaryRedirect, "/index")
+	})
 
-    e.Any("/login", func(c echo.Context) error {
-        data := ent.Pesan{
-            Nama : "Ryan",
-        }
-        return c.Render(http.StatusOK, "index.html", data)
-    })
+    e.Any("/index", cont.Index)
+
+    e.GET("/login", cont.Login)
+
+    e.POST("/login_process", cont.LoginProcess)
 
     e.Logger.Fatal(e.Start(":9000"))
 }
