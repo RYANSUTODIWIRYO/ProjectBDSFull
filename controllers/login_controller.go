@@ -23,8 +23,9 @@ func Login(c echo.Context) error {
     return c.Render(http.StatusOK, "login.html", nil)
 }
 
-func LoginProcess(c echo.Context) error {    
-    //Koneksi database
+func LoginProcess(c echo.Context) error { 
+    // fmt.Println("Proses Login..")   
+    // Koneksi database
     db, err := conf.KoneksiDB()
 	if err != nil {
 		panic(err)
@@ -61,6 +62,7 @@ func LoginProcess(c echo.Context) error {
         data := map[string]string{
             "Status" : "ID User atau Password salah!",
         }
+        // fmt.Println("Login gagal...")
         return c.Render(http.StatusOK, "login.html", data)
     }
 }
