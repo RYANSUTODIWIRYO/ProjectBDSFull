@@ -58,3 +58,7 @@ func SetorTunai(c echo.Context) error {
 	}
 
 }
+
+func Teller(c echo.Context) error {
+    return c.Render(http.StatusOK, "teller.html", nil)
+}
