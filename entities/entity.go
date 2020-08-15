@@ -41,6 +41,7 @@ type Transaksi struct{
 	Berita			string
 }
 
+
 type TransaksiPB struct {
 	Id_user 		int64
 	Tanggal			string

@@ -60,6 +60,8 @@ func main() {
 
     e.POST("/login_process", cont.LoginProcess)
 
+    e.POST("/setor-tunai", cont.SetorTunai)
+
     e.Logger.Fatal(e.Start(":9000"))
 }
 

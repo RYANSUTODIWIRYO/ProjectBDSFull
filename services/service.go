@@ -40,9 +40,9 @@ func (s Service) LoginUser(id_user int, password string) (ent.User, error) {
 func (s Service) CariNasabah(rekeningTujuan int) (ent.NasabahDetail, error) {
 	//rows, err := us.DB.Query("SELECT * FROM user WHERE id_user = ? AND password = ? ",id_user, password)
 	rows, err := s.DB.Query(
-		"SELECT nasabah_detail.cif, nasabah.nama, nasabah_detail.no_rekening, nasabah_detail.saldo " +
-			"FROM bank.nasabah_detail " +
-			"INNER JOIN bank.nasabah " +
+		"SELECT nasabah_detail.cif, nasabah.nama, nasabah_detail.no_rekening, nasabah_detail.saldo "+
+			"FROM bank.nasabah_detail "+
+			"INNER JOIN bank.nasabah "+
 			"ON (nasabah_detail.cif = nasabah.cif AND nasabah_detail.no_rekening = ?)", rekeningTujuan)
 
 	if err != nil {
@@ -51,20 +51,20 @@ func (s Service) CariNasabah(rekeningTujuan int) (ent.NasabahDetail, error) {
 		var nasabahDetail ent.NasabahDetail
 		for rows.Next() {
 			var (
-				cif			int64
-				nama		string
+				cif         int64
+				nama        string
 				no_rekening int64
-				saldo	 	int64
+				saldo       int64
 			)
 			err2 := rows.Scan(&cif, &nama, &no_rekening, &saldo)
 			if err2 != nil {
 				panic(err)
 			}
 			nasabahDetail = ent.NasabahDetail{
-				Cif: 			cif,
-				Nama: 			nama,
-				No_rekening:	no_rekening,
-				Saldo: 			saldo,
+				Cif:         cif,
+				Nama:        nama,
+				No_rekening: no_rekening,
+				Saldo:       saldo,
 			}
 		}
 		return nasabahDetail, nil
@@ -72,26 +72,29 @@ func (s Service) CariNasabah(rekeningTujuan int) (ent.NasabahDetail, error) {
 }
 
 // insert setor tunai to db
-func (s Service) SetorTunaiService(transaksi ent.Transaksi, nasabah ent.NasabahDetail) (int, ent.Transaksi, error) {
-
-	nasabah.Saldo = nasabah.Saldo + transaksi.Nominal
+func (s Service) SetorTunaiService(transaksi ent.Transaksi) (int, ent.Transaksi, error) {
+	transaksi.Saldo = transaksi.Saldo + transaksi.Nominal
 	rows, err := s.DB.Exec(
 		"INSERT INTO transaksi (id_user, no_rekening, tanggal, jenis_transaksi, nominal, saldo, berita) values (?,?,?,?,?,?,?)",
 		transaksi.Id_user,
-		nasabah.No_rekening,
+		transaksi.No_rekening,
 		transaksi.Tanggal,
 		transaksi.Jenis_transaksi,
 		transaksi.Nominal,
-		nasabah.Saldo,
+		transaksi.Saldo,
 		transaksi.Berita)
-	_, err = s.DB.Exec(
-		"UPDATE nasabah_detail SET saldo = ? where no_rekening = ?", nasabah.Saldo, nasabah.No_rekening)
+	setor, err := s.DB.Exec(
+		"UPDATE nasabah_detail SET saldo = ? where no_rekening = ?", transaksi.Saldo, transaksi.No_rekening)
 	if err != nil {
 		panic(err)
+	}
+	update1, _ := setor.RowsAffected()
+	update2, _ := rows.RowsAffected()
+	transaksi.Saldo = transaksi.Saldo
+	if update1 > 0 && update2 > 0 {
+		return int(update1), transaksi, nil
 	} else {
-		transaksi.Saldo = nasabah.Saldo
-		rows.RowsAffected()
-		return 1, transaksi, nil
+		return 0, ent.Transaksi{}, nil
 	}
 }
 
@@ -131,27 +134,27 @@ func (s Service) CetakBuku(no_rekening int) ([]ent.Transaksi, error) {
 	} else {
 		var transaksi []ent.Transaksi
 		for rows.Next() {
-			var id_transaksi 	int64
-			var id_user 		int64
-			var no_rekening		int64
-			var tanggal 		string
+			var id_transaksi int64
+			var id_user int64
+			var no_rekening int64
+			var tanggal string
 			var jenis_transaksi string
-			var nominal 		int64
-			var saldo 			int64
-			var berita 			string
+			var nominal int64
+			var saldo int64
+			var berita string
 			err2 := rows.Scan(&id_transaksi, &id_user, &no_rekening, &tanggal, &jenis_transaksi, &nominal, &saldo, &berita)
 			if err2 != nil {
 				return []ent.Transaksi{}, err2
 			} else {
 				trx := ent.Transaksi{
-					Id_transaksi:		id_transaksi,
-					Id_user:      		id_user,
-					No_rekening: 		no_rekening,
-					Tanggal:         	tanggal,
-					Jenis_transaksi:	jenis_transaksi,
-					Nominal:         	nominal,
-					Saldo:           	saldo,
-					Berita:          	berita,
+					Id_transaksi:    id_transaksi,
+					Id_user:         id_user,
+					No_rekening:     no_rekening,
+					Tanggal:         tanggal,
+					Jenis_transaksi: jenis_transaksi,
+					Nominal:         nominal,
+					Saldo:           saldo,
+					Berita:          berita,
 				}
 				transaksi = append(transaksi, trx)
 			}
@@ -206,13 +209,13 @@ func (s Service) FindByCifOrNikService(cif int64) (ent.Nasabah, error) {
 		var nasabah ent.Nasabah
 		for rows.Next() {
 			var (
-				cif int64
-				nik int64
-				nama string
-				tempat_lahir string
+				cif           int64
+				nik           int64
+				nama          string
+				tempat_lahir  string
 				tanggal_lahir string
-				alamat string
-				no_telepon string
+				alamat        string
+				no_telepon    string
 			)
 
 			//Menampung hasil query
@@ -318,4 +321,3 @@ func (s Service) UpdateNasabahService(nasabah ent.Nasabah) (ent.Nasabah, error) 
 		return ent.Nasabah{}, nil
 	}
 }
-
