@@ -49,6 +49,7 @@ func main() {
     e := echo.New()
 
     e.Renderer = NewRenderer("./views/*.html", true)
+    e.Static("/assets", "./assets")
 
     e.Any("/", func(c echo.Context) error {
 		return c.Redirect(http.StatusTemporaryRedirect, "/index")
@@ -60,7 +61,9 @@ func main() {
 
     e.POST("/login_process", cont.LoginProcess)
 
-    e.POST("/setor-tunai", cont.SetorTunai)
+    e.POST("/setor_tunai", cont.SetorTunai)
+
+    e.Any("/teller", cont.Teller)
 
     e.Logger.Fatal(e.Start(":9000"))
 }
